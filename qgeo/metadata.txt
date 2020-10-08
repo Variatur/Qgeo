@@ -23,7 +23,7 @@ hasProcessingProvider=yes
 # changelog=
 
 # Tags are comma separated with spaces allowed
-tags=cadastre,Queensland,Australia,vegetation regulation,basemap,tenure,ecosystem,habitat,wetland,koala,waterway,river,ADVCC,AMP, KMZ, KML, PDF
+tags=cadastre,Queensland,Australia,geology,basemap,tenure, KML, PDF
 
 homepage=https://github.com/PattemoreSoftware/Qgeo
 category=Analysis
