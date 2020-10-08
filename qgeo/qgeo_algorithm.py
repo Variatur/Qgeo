@@ -534,8 +534,31 @@ class QgeoAlgorithm(QgsProcessingAlgorithm):
         post.update(dict(   service1 = "GeoscientificInformation/", 
                             service2 = "GeologyDetailed/"
                             ))
-        if loadDSG:
-            feedback.setProgressText("Getting regional ecosystem map...")
+        #Get Detailed Geology Extent
+        feedback.setProgressText("Getting Detailed geology extent...")
+        post.update(dict(serviceNumber = str(14)))
+        tempLayer = QgsVectorLayer(self.GetGEOJSON(self.BuildQuery(post,context,feedback),context,feedback), "tempLayer", "ogr")
+        if not tempLayer.isValid():
+            feedback.reportError("Layer failed to load! [code M1]", True)
+            return
+        #Check if property boundary intersects with Detailed Geology Extent
+        params = {
+            'INPUT' : tempLayer,
+            'OVERLAY' : PropertyVlayer,
+            'OUTPUT' : "memory:"
+        }
+        tempLayer = processing.run(
+            'native:intersection', 
+            params,
+            #is_child_algorithm=True,
+            context=context,
+            feedback=feedback)["OUTPUT"]
+        if feedback.isCanceled():
+            return
+        #
+        #
+        if loadDSG & tempLayer.featureCount()!=0:
+            feedback.setProgressText("Getting detailed surface geology...")
             post.update(dict(serviceNumber = str(15)))
             layerInfo.update(dict(  layername = "Geology Detailed",
                                     layerstyle = "LayerStyles/GeologyDetailed.qml",
@@ -543,6 +566,7 @@ class QgeoAlgorithm(QgsProcessingAlgorithm):
                                     ))
             self.LoadNaturalResourceLayer(post,layerInfo,context,feedback)
             feedback.setProgress(30)
+        else: feedback.reportError("Property outside extent of Detailed Geology mapping",True)
         #if loadPreClearMap:
         #    feedback.setProgressText("Getting pre-clear regional ecosystem map...")
         #    post.update(dict(serviceNumber = str(15)))
