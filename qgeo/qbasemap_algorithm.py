@@ -57,6 +57,8 @@ class QbasemapAlgorithm(QgsProcessingAlgorithm):
     LOADMAPLABELS = "LOADMAPLABELS"
     LOADKOALAPA = "LOADKOALAPA"
     LOADLGA = "LOADLGA"
+    LOADDSGE = "LOADDSGE"
+    LOADDSOLIDGE = "LOADDSOLIDGE"
     def initAlgorithm(self, config):
         self.addParameter(
             QgsProcessingParameterBoolean(
@@ -107,15 +109,22 @@ class QbasemapAlgorithm(QgsProcessingAlgorithm):
         )
         self.addParameter(
             QgsProcessingParameterBoolean(
-                self.LOADKOALAPA,
-                self.tr('Overlay - Koala protection area (SEQ)'),
+                self.LOADLGA,
+                self.tr('Overlay - Local government areas'),
                 False
             )
         )
         self.addParameter(
             QgsProcessingParameterBoolean(
-                self.LOADLGA,
-                self.tr('Overlay - Local government areas'),
+                self.LOADDSGE,
+                self.tr('Extent of Detailed Surface Geology mapping (1:100,000)'),
+                False
+            )
+        )
+        self.addParameter(
+            QgsProcessingParameterBoolean(
+                self.LOADDSOLIDGE,
+                self.tr('Extent of Detailed Solid Geology mapping (1:100,000)'),
                 False
             )
         )
@@ -128,8 +137,9 @@ class QbasemapAlgorithm(QgsProcessingAlgorithm):
         loadBaseColour = self.parameterAsBool(parameters,self.LOADBASECOLOUR,context)
         loadMapLabels = self.parameterAsBool(parameters,self.LOADMAPLABELS,context)
         loadStateBorder = self.parameterAsBool(parameters,self.LOADSTATEBORDER,context)
-        loadKoalaPA = self.parameterAsBool(parameters,self.LOADKOALAPA,context)
         loadLocalGovBoundaries = self.parameterAsBool(parameters,self.LOADLGA,context)
+        loadDSGE = self.parameterAsBool(parameters,self.LOADDSGE,context)
+        loadDSOLIDGE = self.parameterAsBool(parameters,self.LOADDSOLIDGE,context)
         #
         # Set up some layer rendering basics
         project = QgsProject.instance()
@@ -140,6 +150,14 @@ class QbasemapAlgorithm(QgsProcessingAlgorithm):
             feedback.setProgressText("Getting local government boundaries...")
             QgsLayerDefinition().loadLayerDefinition(resolve('LayerDefinitions/LocalGovBoundaries.qlr'), project, root)
             feedback.setProgress(15)
+        if loadDSGE:
+            feedback.setProgressText("Getting Extent of Detailed Surface Geology mapping...")
+            QgsLayerDefinition().loadLayerDefinition(resolve('LayerDefinitions/DetailedSurfaceGeologyExtent.qlr'), project, root)
+            feedback.setProgress(16)
+        if loadDSOLIDGE:
+            feedback.setProgressText("Getting Extent of Detailed Solid Geology mapping...")
+            QgsLayerDefinition().loadLayerDefinition(resolve('LayerDefinitions/DetailedSolidGeologyExtent.qlr'), project, root)
+            feedback.setProgress(17)
         if loadStateBorder:
             feedback.setProgressText("Getting state border overlay...")
             QgsLayerDefinition().loadLayerDefinition(resolve('LayerDefinitions/QldStateBorder.qlr'), project, root)
@@ -148,10 +166,6 @@ class QbasemapAlgorithm(QgsProcessingAlgorithm):
             feedback.setProgressText("Getting label overlay...")
             QgsLayerDefinition().loadLayerDefinition(resolve('LayerDefinitions/QldMapLabels.qlr'), project, root)
             feedback.setProgress(30)
-        if loadKoalaPA:
-            feedback.setProgressText("Getting Koala Protection Area overlay...")
-            QgsLayerDefinition().loadLayerDefinition(resolve('LayerDefinitions/KoalaProtectionArea.qlr'), project, root)
-            feedback.setProgress(40)
         if loadSatHR:
             feedback.setProgressText("Getting Qld government HiRes imagery...")
             QgsLayerDefinition().loadLayerDefinition(resolve('LayerDefinitions/QldHiResImageryWMTS.qlr'), project, root)

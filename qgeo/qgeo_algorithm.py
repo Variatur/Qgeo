@@ -50,19 +50,11 @@ class QgeoAlgorithm(QgsProcessingAlgorithm):
     INPUT = 'INPUT'
     OUTPUTDIR = 'OUTPUTDIR'
     LOADTENURE = "LOADTENURE"
-    #LOADSUPPORTINGMAP = "LOADSUPPORTINGMAP"
-    #LOADPRECLEARMAP = "LOADPRECLEARMAP"
-    LOADDSG = "LOADDSG"
-    #LOADPMAV = "LOADPMAV"
-    #LOADESSHAB = "LOADESSHAB"
-    #LOADWETLANDS = "LOADWETLANDS"
-    #LOADVMWATER8 = "LOADVMWATER8"
-    #LOADVMWATER7 = "LOADVMWATER7"
-    #LOADPPTM = "LOADPPTM"
-    #LOADKPA = "LOADKPA"
-    #LOADKHA = "LOADKHA"
-    #LOADKHAL = "LOADKHAL"
-    #LOADKRA = "LOADKRA"
+    LOADDSURFG = "LOADDSURFG"
+    LOADDSOLG = "LOADDSOLG"
+    #LOADDSTRUCT = "LOADDSTRUCT"
+    LOADRGSURF = "LOADRGSURF"
+    #
     def initAlgorithm(self, config):
         self.addParameter(
             QgsProcessingParameterString(
@@ -79,101 +71,39 @@ class QgeoAlgorithm(QgsProcessingAlgorithm):
         )
         self.addParameter(
             QgsProcessingParameterBoolean(
-                self.LOADDSG,
-                self.tr('Detailed surface geology (1:100,000) - not available in all areas'),
+                self.LOADDSURFG,
+                self.tr('Detailed surface geology (1:100k) - not available in all areas'),
+                False
+            )
+        )
+        self.addParameter(
+            QgsProcessingParameterBoolean(
+                self.LOADDSOLG,
+                self.tr('Detailed solid geology (1:100k) - not available in all areas'),
                 False
             )
         )
         #self.addParameter(
         #    QgsProcessingParameterBoolean(
-        #        self.LOADPRECLEARMAP,
-        #        self.tr('Pre-clear regional ecosystem map, using RE classes of VMA s22LA-LC (used for VM purposes, eg. determining exchange areas)'),
+        #        self.LOADDSTRUCT,
+        #        self.tr('Detailed geologic structure (1:100k) - not available in all areas'),
         #        False
         #    )
         #)
+        self.addParameter(
+            QgsProcessingParameterBoolean(
+                self.LOADRGSURF,
+                self.tr('Regional surface geology (1:500k or 1:1M)'),
+                False
+            )
+        )
         self.addParameter(
             QgsProcessingParameterFolderDestination(
                 self.OUTPUTDIR,
                 self.tr("Directory to save output files")
             )
         )
-        #self.addParameter(
-        #    QgsProcessingParameterBoolean(
-        #        self.LOADRVM,
-        #        self.tr('RVM map (Regulated Vegetation Management map, VMA s20A)'),
-        #        False
-        #    )
-        #)
-        #self.addParameter(
-        #    QgsProcessingParameterBoolean(
-        #        self.LOADPMAV,
-        #        self.tr('PMAV (Property Map of Assessable Vegetation, VMA s20AK)'),
-        #        False
-        #    )
-        #)
-        #self.addParameter(
-        #    QgsProcessingParameterBoolean(
-        #        self.LOADESSHAB,
-        #        self.tr('Essential Habitat (VMA s20AC)'),
-        #        False
-        #    )
-        #)
-        #self.addParameter(
-        #    QgsProcessingParameterBoolean(
-        #        self.LOADWETLANDS,
-        #        self.tr('Wetlands (VMA, s20AA)'),
-        #        False
-        #    )
-        #)
-        #self.addParameter(
-        #    QgsProcessingParameterBoolean(
-        #        self.LOADVMWATER8,
-        #        self.tr('VM Water courses 1:25000 SEQ (VMA s20AB)'),
-        #        False
-        #    )
-        #)
-        #self.addParameter(
-        #    QgsProcessingParameterBoolean(
-        #        self.LOADVMWATER7,
-        #        self.tr('VM Water courses 1:100,000 or 1:250,000 (VMA s20AB)'),
-        #        False
-        #    )
-        #)           
-        #self.addParameter(
-        #    QgsProcessingParameterBoolean(
-        #        self.LOADPPTM,
-        #        self.tr('Protected Plant Trigger Map'),
-        #        False
-        #    )
-        #)
-        #self.addParameter(
-        #    QgsProcessingParameterBoolean(
-        #        self.LOADKPA,
-        #        self.tr('Koala Priority Area'),
-        #        False
-        #    )
-        #)
-        #self.addParameter(
-        #    QgsProcessingParameterBoolean(
-        #        self.LOADKHA,
-        #        self.tr('Core Koala Habitat Area'),
-        #        False
-        #    )
-        #)
-        #self.addParameter(
-        #    QgsProcessingParameterBoolean(
-        #        self.LOADKHAL,
-        #        self.tr('Locally refined Koala Habitat Area - used by local govt'),
-        #        False
-        #    )
-        #)
-        #self.addParameter(
-        #    QgsProcessingParameterBoolean(
-        #        self.LOADKRA,
-        #        self.tr('Koala Restoration Area'),
-        #        False
-        #    )
-        #)
+    #
     def GetGEOJSON(self,URL,context,feedback):
         #This method of server access avoids firewall problems
         params = {
@@ -194,7 +124,6 @@ class QgeoAlgorithm(QgsProcessingAlgorithm):
         return return_string
     def BuildQuery(self,post,context,feedback):
         # 
-        baseURL = "https://gisservices.information.qld.gov.au/arcgis/rest/"
         # Mandatory query parameters
         service1 = post.get('service1', '')
         service2 = post.get('service2', '')
@@ -214,8 +143,10 @@ class QgeoAlgorithm(QgsProcessingAlgorithm):
         # Optional query parameters with empty string defaults
         where = post.get('where', '')
         objectIds = post.get('objectIDs', '')
+        print(objectIds)
         geometry = post.get('geometry', '')
         # Build
+        baseURL = "https://gisservices.information.qld.gov.au/arcgis/rest/"
         serviceURL = "services/"+service1+service2+serviceType
         whereURL = serviceNumber+"/query?where="+where+"&objectIds="+objectIds+"&time="
         geomURL = "&geometry="+geometry+"&geometryType="+geometryType+"&inSR="+inSR+"&spatialRel=esriSpatialRelIntersects&distance=&units=esriSRUnit_Meter&relationParam="
@@ -223,10 +154,26 @@ class QgeoAlgorithm(QgsProcessingAlgorithm):
         out2URL = "&returnIdsOnly="+returnIdsOnly+"&returnCountOnly="+returnCountOnly+"&returnExtentOnly=false&orderByFields=&groupByFieldsForStatistics=&outStatistics="
         out3URL = "&returnZ=false&returnM=false&multipatchOption=xyFootprint&resultOffset=&resultRecordCount=&returnTrueCurves=false&returnExceededLimitFeatures=false"
         out4URL = "&quantizationParameters=&returnCentroid=false&sqlFormat=none&resultType=&featureEncoding=esriDefault&f="+f
-        queryURL = baseURL+serviceURL+whereURL+serviceNumber+geomURL+out1URL+out2URL+out3URL+out4URL
+        queryURL = baseURL+serviceURL+whereURL+geomURL+out1URL+out2URL+out3URL+out4URL
         # --following line to be deleted
-        #print(queryURL)
+        print(queryURL)
         return queryURL
+    def ItemInfo(self,post,context,feedback):
+        baseURL = "https://gisservices.information.qld.gov.au/arcgis/rest/"
+        # Mandatory query parameters
+        service1 = post.get('service1', '')
+        service2 = post.get('service2', '')
+        serviceNumber = post.get('serviceNumber', '')
+        #
+        # Optional query parameters with defaults
+        f = "json"
+        serviceType = post.get('serviceType', "MapServer/")
+        # Build
+        serviceURL = "services/"+service1+service2+serviceType
+        whereURL = serviceNumber+"/iteminfo?f="+f
+        queryURL = baseURL+serviceURL+whereURL
+        return queryURL
+        #
     def LoadPropertyLayer(self,layerInfo,context,feedback):
         LotPlans = layerInfo['lots']
         standardCRS = layerInfo['standardCRS']
@@ -255,6 +202,7 @@ class QgeoAlgorithm(QgsProcessingAlgorithm):
         if objectIDs == None:
             return None
         objectID_list = json.loads(objectIDs)["objectIds"]
+        print(objectID_list)
         # Get feature count
         if objectID_list == None:
             feedback.reportError("No objects to retrieve. Was the Lot/Plan valid? Exiting...")
@@ -273,6 +221,7 @@ class QgeoAlgorithm(QgsProcessingAlgorithm):
                         returnGeometry = 'true',
                         outSR = standardCRSshort
                         )
+        print(post.get('objectIDs'))
         PropertyLayer = QgsVectorLayer(self.GetGEOJSON(self.BuildQuery(post,context,feedback),context,feedback), layername, "ogr")
         #Ensure the created layer is valid
         if not PropertyLayer.isValid() or PropertyLayer.featureCount() < 1:
@@ -298,10 +247,9 @@ class QgeoAlgorithm(QgsProcessingAlgorithm):
         #Write layer to shape file and reload layer from shapefile
         TimeString = str(datetime.datetime.now()).replace(':','-').replace(':','-').replace('.','-').replace(' ','-')
         #Save as GeoPackage
-        print(PropertyLayer)
         QgsVectorFileWriter.writeAsVectorFormat(PropertyLayer,outputDIR+"/Property"+TimeString+".gpkg",'utf-8',QgsCoordinateReferenceSystem(standardCRS))
         #Save as shapefile 
-        QgsVectorFileWriter.writeAsVectorFormat(PropertyLayer,outputDIR+"/Property"+TimeString+".shp",'utf-8',QgsCoordinateReferenceSystem(standardCRS),driverName="ESRI Shapefile")
+        #QgsVectorFileWriter.writeAsVectorFormat(PropertyLayer,outputDIR+"/Property"+TimeString+".shp",'utf-8',QgsCoordinateReferenceSystem(standardCRS),driverName="ESRI Shapefile")
         # Reload layer
         PropertyLayer = QgsVectorLayer(outputDIR+"/Property"+TimeString+".gpkg","Property Boundary","ogr")
         if not PropertyLayer.isValid():
@@ -460,19 +408,10 @@ class QgeoAlgorithm(QgsProcessingAlgorithm):
         feedback.setProgressText(lotplans_message)
         #  
         loadTenure = self.parameterAsBool(parameters,self.LOADTENURE,context)
-        loadDSG = self.parameterAsBool(parameters,self.LOADDSG,context)
-        #loadPreClearMap = self.parameterAsBool(parameters,self.LOADPRECLEARMAP,context)
-        #loadRVM = self.parameterAsBool(parameters,self.LOADRVM,context)
-        #loadPMAV = self.parameterAsBool(parameters,self.LOADPMAV,context)
-        #loadEssHab = self.parameterAsBool(parameters,self.LOADESSHAB,context)
-        #loadPPTM = self.parameterAsBool(parameters,self.LOADPPTM,context)
-        #loadWetlands = self.parameterAsBool(parameters,self.LOADWETLANDS,context)
-        #loadVMWater8 = self.parameterAsBool(parameters,self.LOADVMWATER8,context)
-        #loadVMWater7 = self.parameterAsBool(parameters,self.LOADVMWATER7,context)
-        #loadKoalaPA = self.parameterAsBool(parameters,self.LOADKPA,context)
-        #loadKoalaHA = self.parameterAsBool(parameters,self.LOADKHA,context)
-        #loadKoalaRA = self.parameterAsBool(parameters,self.LOADKRA,context)
-        #loadKoalaHAL = self.parameterAsBool(parameters,self.LOADKHAL,context)
+        loadDSurfG = self.parameterAsBool(parameters,self.LOADDSURFG,context)
+        loadDSolG = self.parameterAsBool(parameters,self.LOADDSOLG,context)
+        #loadDStruct = self.parameterAsBool(parameters,self.LOADDSTRUCT,context)
+        loadRGsurf = self.parameterAsBool(parameters,self.LOADRGSURF,context)
         outputDIR = self.parameterAsFileOutput(parameters,self.OUTPUTDIR,context)
         feedback.setProgress(1)
         # The following lines workaround an apparent QGIS bug where a temporary directory isn't actually made.
@@ -492,14 +431,14 @@ class QgeoAlgorithm(QgsProcessingAlgorithm):
             feedback.reportError("Failed to load property boundary! Invalid lot/plan? Network or server problems?", True)
             return {}
         #
-        feedback.setProgress(15)
+        feedback.setProgress(3)
         feedback.setProgressText("Property polygon(s) loaded")  
         # Load property layer to canvas
         project = QgsProject.instance()
         project.addMapLayer(PropertyVlayer, False)
         layerTree = iface.layerTreeCanvasBridge().rootGroup()
         layerTree.insertChildNode(0, QgsLayerTreeLayer(PropertyVlayer))
-        feedback.setProgress(20)
+        feedback.setProgress(4)
         #
         #Zoom to extent
         canvas = iface.mapCanvas()
@@ -517,169 +456,163 @@ class QgeoAlgorithm(QgsProcessingAlgorithm):
                             standardCRS = standardCRS
                             )
         #
-        #Load Natural Resource layers
+        ################################
+        # Get Tenure                   #
+        ################################
         if loadTenure:
             feedback.setProgressText("Getting tenure map...")
             post.update(dict(   service1 = "PlanningCadastre/", 
                                 service2 = "LandParcelPropertyFramework/",
-                                serviceNumber = str(13)
+                                serviceNumber = str(13),
+                                serviceType = "MapServer/",
+                                f = 'geojson'
                                 ))
             layerInfo.update(dict(  layername = "Tenure",
                                     layerstyle = "LayerStyles/QldPropertyTenure.qml",
                                     geomtype = "MultiPolygon"
                                     ))
             self.LoadNaturalResourceLayer(post,layerInfo,context,feedback)
-            feedback.setProgress(25)
-        # Update server details
-        post.update(dict(   service1 = "GeoscientificInformation/", 
-                            service2 = "GeologyDetailed/"
-                            ))
-        #Get Detailed Geology Extent
-        feedback.setProgressText("Getting Detailed geology extent...")
-        post.update(dict(serviceNumber = str(14)))
-        tempLayer = QgsVectorLayer(self.GetGEOJSON(self.BuildQuery(post,context,feedback),context,feedback), "tempLayer", "ogr")
-        if not tempLayer.isValid():
-            feedback.reportError("Layer failed to load! [code M1]", True)
-            return
-        #Check if property boundary intersects with Detailed Geology Extent
-        params = {
-            'INPUT' : tempLayer,
-            'OVERLAY' : PropertyVlayer,
-            'OUTPUT' : "memory:"
-        }
-        tempLayer = processing.run(
-            'native:intersection', 
-            params,
-            #is_child_algorithm=True,
-            context=context,
-            feedback=feedback)["OUTPUT"]
-        if feedback.isCanceled():
-            return
-        #
-        #
-        if loadDSG & tempLayer.featureCount()!=0:
-            feedback.setProgressText("Getting detailed surface geology...")
-            post.update(dict(serviceNumber = str(15)))
-            layerInfo.update(dict(  layername = "Geology Detailed",
-                                    layerstyle = "LayerStyles/GeologyDetailed.qml",
-                                    geomtype = "MultiPolygon"
+            feedback.setProgress(6)
+        ################################
+        # Get Detailed Surface Geology #
+        ################################
+        if loadDSurfG:
+            post.update(dict(   service1 = "GeoscientificInformation/", 
+                                service2 = "GeologyDetailed/",
+                                serviceNumber = str(14),
+                                geometry = '*',
+                                serviceType = "MapServer/",
+                                f = 'geojson'
+                                ))
+            feedback.setProgressText("Getting Detailed surface geology extent...")
+            tempLayer = QgsVectorLayer(self.GetGEOJSON(self.BuildQuery(post,context,feedback),context,feedback), "tempLayer", "ogr")
+            if not tempLayer.isValid():
+                feedback.reportError("Layer failed to load! [code M1]", True)
+                return
+            #Check if property boundary intersects with Detailed Geology Extent
+            params = {
+                'INPUT' : tempLayer,
+                'OVERLAY' : PropertyVlayer,
+                'OUTPUT' : "memory:"
+            }
+            tempLayer = processing.run(
+                'native:intersection', 
+                params,
+                #is_child_algorithm=True,
+                context=context,
+                feedback=feedback)["OUTPUT"]
+            if feedback.isCanceled():
+                return
+            #
+            if tempLayer.featureCount()!=0:
+                feedback.setProgressText("Getting detailed surface geology...")
+                post.update(dict(serviceNumber = str(15)))
+                LayerName=json.loads(self.GetGEOJSON(self.ItemInfo(post,context,feedback),context,feedback))
+                DefaultLayerName = 'Surface geology (1:100k)'
+                LayerName=LayerName.get('title',DefaultLayerName)
+                layerInfo.update(dict(  layername = LayerName,
+                                        layerstyle = "LayerStyles/GeologyDetailedSurface.qml",
+                                        geomtype = "MultiPolygon"
+                                        ))
+                self.LoadNaturalResourceLayer(post,layerInfo,context,feedback)
+                feedback.setProgress(8)
+            else: feedback.reportError("Property outside extent of Detailed Solid Geology mapping",True)
+        ##############################
+        # Get Detailed Solid Geology #
+        ##############################
+        if loadDSolG:
+            post.update(dict(   service1 = "GeoscientificInformation/", 
+                                service2 = "GeologyDetailed/",
+                                serviceNumber = str(16),
+                                geometry = '*',
+                                serviceType = "MapServer/",
+                                f = 'geojson'
+                                ))
+            feedback.setProgressText("Getting detailed solid geology extent...")
+            post.update(dict(serviceNumber = str(16)))
+            tempLayer = QgsVectorLayer(self.GetGEOJSON(self.BuildQuery(post,context,feedback),context,feedback), "tempLayer", "ogr")
+            if not tempLayer.isValid():
+                feedback.reportError("Layer failed to load! [code M2]", True)
+                return
+            #Check if property boundary intersects with Detailed Geology Extent
+            params = {
+                'INPUT' : tempLayer,
+                'OVERLAY' : PropertyVlayer,
+                'OUTPUT' : "memory:"
+            }
+            tempLayer = processing.run(
+                'native:intersection', 
+                params,
+                #is_child_algorithm=True,
+                context=context,
+                feedback=feedback)["OUTPUT"]
+            if feedback.isCanceled():
+                return
+            #
+            if tempLayer.featureCount()!=0:
+                feedback.setProgressText("Getting detailed solid geology...")
+                post.update(dict(serviceNumber = str(17)))
+                LayerName=json.loads(self.GetGEOJSON(self.ItemInfo(post,context,feedback),context,feedback))
+                DefaultLayerName = 'Solid geology (1:100k)'
+                LayerName=LayerName.get('title',DefaultLayerName)
+                layerInfo.update(dict(  layername = LayerName,
+                                        layerstyle = "LayerStyles/GeologyDetailedSolid.qml",
+                                        geomtype = "MultiPolygon"
+                                        ))
+                self.LoadNaturalResourceLayer(post,layerInfo,context,feedback)
+                feedback.setProgress(10)
+            else: feedback.reportError("Property outside extent of detailed solid geology mapping",True)
+        ###############################
+        # Get Regional Geology Extent #
+        ###############################
+        if loadRGsurf:
+            post.update(dict(   service1 = "GeoscientificInformation/", 
+                                service2 = "GeologyRegional/",
+                                geometry = '*',
+                                serviceType = "MapServer/",
+                                f = 'geojson'
+                                ))
+            for i in range(2,16):
+                feedback.setProgressText("Getting regional geology extent...")
+                post.update(dict(   serviceNumber = str(i),
+                                    geometry = '*'
                                     ))
-            self.LoadNaturalResourceLayer(post,layerInfo,context,feedback)
-            feedback.setProgress(30)
-        else: feedback.reportError("Property outside extent of Detailed Geology mapping",True)
-        #if loadPreClearMap:
-        #    feedback.setProgressText("Getting pre-clear regional ecosystem map...")
-        #    post.update(dict(serviceNumber = str(15)))
-        #    layerInfo.update(dict(  layername = "Pre-clear RE map (VM edition)",
-        #                            layerstyle = "LayerStyles/PreClearMap.qml",
-        #                            geomtype = "MultiPolygon"
-        #                            ))
-        #    self.LoadNaturalResourceLayer(post,layerInfo,context,feedback)
-        #    feedback.setProgress(35)
-        #if loadRVM:
-        #    feedback.setProgressText("Getting RVM...")
-        #    post.update(dict(serviceNumber = str(109)))
-        #    layerInfo.update(dict(  layername = "RVM",
-        #                            layerstyle = "LayerStyles/RVM.qml",
-        #                            geomtype = "MultiPolygon"
-        #                            ))
-        #    self.LoadNaturalResourceLayer(post,layerInfo,context,feedback)
-        #    feedback.setProgress(40)
-        #if loadPMAV:
-        #    feedback.setProgressText("Getting PMAV...")
-        #    post.update(dict(serviceNumber = str(146)))
-        #    layerInfo.update(dict(  layername = "PMAV",
-        #                            layerstyle = "LayerStyles/PMAV.qml",
-        #                            geomtype = "MultiPolygon"
-        #                            ))
-        #    self.LoadNaturalResourceLayer(post,layerInfo,context,feedback)
-        #    feedback.setProgress(50)
-        #if loadEssHab:
-        #    feedback.setProgressText("Getting Essential Habitat map...")
-        #    post.update(dict(serviceNumber = str(5)))
-        #    layerInfo.update(dict(  layername = "Essential Habitat",
-        #                            layerstyle = "LayerStyles/EssentialHabitat.qml",
-        #                            geomtype = "MultiPolygon"
-        #                            ))
-        #    self.LoadNaturalResourceLayer(post,layerInfo,context,feedback)
-        #    feedback.setProgress(60)
-        #if loadWetlands:
-        #    feedback.setProgressText("Getting Wetlands map...")
-        #    post.update(dict(serviceNumber = str(4)))
-        #    layerInfo.update(dict(  layername = "Wetlands",
-        #                            layerstyle = "LayerStyles/Wetlands.qml",
-        #                            geomtype = "MultiPolygon"
-        #                            ))
-        #    self.LoadNaturalResourceLayer(post,layerInfo,context,feedback)
-        #    feedback.setProgress(70)
-        #if loadVMWater8:
-        #    feedback.setProgressText("Getting 1:25000 (SEQ) Watercourse map...")
-        #    post.update(dict(serviceNumber = str(8)))
-        #    layerInfo.update(dict(  layername = "VM Watercourses-SEQ)",
-        #                            layerstyle = "LayerStyles/VMWaterCourse.qml",
-        #                            geomtype = "MultiLineString"
-        #                            ))
-        #    self.LoadNaturalResourceLayer(post,layerInfo,context,feedback)
-        #    feedback.setProgress(80)
-        #if loadVMWater7:
-        #    feedback.setProgressText("Getting Qld Watercourse map...")
-        #    post.update(dict(serviceNumber = str(7)))
-        #    layerInfo.update(dict(  layername = "VM Watercourses QLD",
-        #                            layerstyle = "LayerStyles/VMWaterCourse.qml",
-        #                            geomtype = "MultiLineString"
-        #                            ))
-        #    self.LoadNaturalResourceLayer(post,layerInfo,context,feedback)
-        #    feedback.setProgress(90)    
-        #if loadPPTM:
-        #    feedback.setProgressText("Getting Protected Plant Trigger Map...")
-        #    post.update(dict(serviceNumber = str(201)))
-        #    layerInfo.update(dict(  layername = "Protected Plant Trigger Map",
-        #                            layerstyle = "LayerStyles/PPTM.qml",
-        #                            geomtype = "MultiPolygon"
-        #                            ))
-        #    self.LoadNaturalResourceLayer(post,layerInfo,context,feedback)
-        #    feedback.setProgress(94)
-        ## Update server details
-        #post.update(dict(   service1 = "Environment/", 
-        #                    service2 = "KoalaPlan/"
-        #                    ))
-        #if loadKoalaPA:
-        #    feedback.setProgressText("Getting Koala Priority Area...")
-        #    post.update(dict(serviceNumber = str(1)))
-        #    layerInfo.update(dict(  layername = "Koala Priority Area",
-        #                            layerstyle = "LayerStyles/KoalaPriorityArea.qml",
-        #                            geomtype = "MultiPolygon"
-        #                            ))
-        #    self.LoadNaturalResourceLayer(post,layerInfo,context,feedback)
-        #    feedback.setProgress(95)
-        #if loadKoalaHA:
-        #    feedback.setProgressText("Getting Koala Habitat Area-core...")
-        #    post.update(dict(serviceNumber = str(3)))
-        #    layerInfo.update(dict(  layername = "Koala Habitat Area-core",
-        #                            layerstyle = "LayerStyles/KoalaHabitatArea-core.qml",
-        #                            geomtype = "MultiPolygon"
-        #                            ))
-        #    self.LoadNaturalResourceLayer(post,layerInfo,context,feedback)
-        #    feedback.setProgress(96)
-        #if loadKoalaRA:
-        #    feedback.setProgressText("Getting Koala Restoration Area...")
-        #    post.update(dict(serviceNumber = str(6)))
-        #    layerInfo.update(dict(  layername = "Koala Restoration Area",
-        #                            layerstyle = "LayerStyles/KoalaHabitatRestorationArea.qml",
-        #                            geomtype = "MultiPolygon"
-        #                            ))
-        #    self.LoadNaturalResourceLayer(post,layerInfo,context,feedback)
-        #    feedback.setProgress(97)
-        #if loadKoalaHAL:
-        #    feedback.setProgressText("Getting Koala Habitat Area-locally refined...")
-        #    post.update(dict(serviceNumber = str(5)))
-        #    layerInfo.update(dict(  layername = "Koala Habitat Area-locally refined",
-        #                            layerstyle = "LayerStyles/KoalaHabitatArea-LocallyRefined.qml",
-        #                            geomtype = "MultiPolygon"
-        #                            ))
-        #    self.LoadNaturalResourceLayer(post,layerInfo,context,feedback)
-        #    feedback.setProgress(98)
-        ##
+                tempLayer = QgsVectorLayer(self.GetGEOJSON(self.BuildQuery(post,context,feedback),context,feedback), "tempLayer", "ogr")
+                if not tempLayer.isValid():
+                    feedback.reportError("Layer failed to load! [code M3]", True)
+                    return
+                #Check if property boundary intersects with Detailed Geology Extent
+                params = {
+                    'INPUT' : tempLayer,
+                    'OVERLAY' : PropertyVlayer,
+                    'OUTPUT' : "memory:"
+                }
+                tempLayer = processing.run(
+                    'native:intersection', 
+                    params,
+                    #is_child_algorithm=True,
+                    context=context,
+                    feedback=feedback)["OUTPUT"]
+                if feedback.isCanceled():
+                    return
+                #
+                feedback.setProgress(12+2*i)
+                if tempLayer.featureCount()!=0:
+                    for j in range (0,2):
+                        k=12+2*i+j
+                        feedback.setProgressText("Getting regional geology...")
+                        post.update(dict(serviceNumber = str(k)))
+                        LayerName=json.loads(self.GetGEOJSON(self.ItemInfo(post,context,feedback),context,feedback))
+                        DefaultLayerName = 'RegionalGeology-'+str(k)
+                        LayerName=LayerName.get('title',DefaultLayerName)
+                        layerInfo.update(dict(  layername = LayerName,
+                                                layerstyle = "LayerStyles/RegionalGeology"+str(k)+".qml",
+                                                geomtype = "MultiPolygon"
+                                                ))
+                        if j==0: layerInfo.update(dict(  geomtype = "MultiLineString"))
+                        self.LoadNaturalResourceLayer(post,layerInfo,context,feedback)
+                else: feedback.pushInfo("Property outside extent of regional geology mapping extent ID:"+str(i))
+        #
         #
         feedback.setProgress(100)
         #
