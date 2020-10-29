@@ -53,7 +53,7 @@ class QgeoAlgorithm(QgsProcessingAlgorithm):
     LOADDSURFG = "LOADDSURFG"
     LOADDSOLG = "LOADDSOLG"
     #LOADDSTRUCT = "LOADDSTRUCT"
-    LOADRGSURF = "LOADRGSURF"
+    LOADREGIONAL = "LOADREGIONAL"
     #
     def initAlgorithm(self, config):
         self.addParameter(
@@ -92,8 +92,8 @@ class QgeoAlgorithm(QgsProcessingAlgorithm):
         #)
         self.addParameter(
             QgsProcessingParameterBoolean(
-                self.LOADRGSURF,
-                self.tr('Regional surface geology (1:500k or 1:1M)'),
+                self.LOADREGIONAL,
+                self.tr('Regional geology (1:500k or 1:1M)'),
                 False
             )
         )
@@ -143,7 +143,7 @@ class QgeoAlgorithm(QgsProcessingAlgorithm):
         # Optional query parameters with empty string defaults
         where = post.get('where', '')
         objectIds = post.get('objectIDs', '')
-        print(objectIds)
+        #print(objectIds)
         geometry = post.get('geometry', '')
         # Build
         baseURL = "https://gisservices.information.qld.gov.au/arcgis/rest/"
@@ -156,7 +156,7 @@ class QgeoAlgorithm(QgsProcessingAlgorithm):
         out4URL = "&quantizationParameters=&returnCentroid=false&sqlFormat=none&resultType=&featureEncoding=esriDefault&f="+f
         queryURL = baseURL+serviceURL+whereURL+geomURL+out1URL+out2URL+out3URL+out4URL
         # --following line to be deleted
-        print(queryURL)
+        #print(queryURL)
         return queryURL
     def ItemInfo(self,post,context,feedback):
         baseURL = "https://gisservices.information.qld.gov.au/arcgis/rest/"
@@ -202,7 +202,7 @@ class QgeoAlgorithm(QgsProcessingAlgorithm):
         if objectIDs == None:
             return None
         objectID_list = json.loads(objectIDs)["objectIds"]
-        print(objectID_list)
+        #print(objectID_list)
         # Get feature count
         if objectID_list == None:
             feedback.reportError("No objects to retrieve. Was the Lot/Plan valid? Exiting...")
@@ -221,7 +221,7 @@ class QgeoAlgorithm(QgsProcessingAlgorithm):
                         returnGeometry = 'true',
                         outSR = standardCRSshort
                         )
-        print(post.get('objectIDs'))
+        #print(post.get('objectIDs'))
         PropertyLayer = QgsVectorLayer(self.GetGEOJSON(self.BuildQuery(post,context,feedback),context,feedback), layername, "ogr")
         #Ensure the created layer is valid
         if not PropertyLayer.isValid() or PropertyLayer.featureCount() < 1:
@@ -259,6 +259,8 @@ class QgeoAlgorithm(QgsProcessingAlgorithm):
         PropertyLayer.setName(layername)
         # Add styling
         PropertyLayer.loadNamedStyle(resolve(layerstyle))
+        #write style to geopackage
+        PropertyLayer.saveStyleToDatabase(name="Qgeo-default", description=layerstyle, useAsDefault=True, uiFileContent="")
         PropertyLayer.triggerRepaint()
         return PropertyLayer
 
@@ -371,12 +373,10 @@ class QgeoAlgorithm(QgsProcessingAlgorithm):
         if NRdata.featureCount() > 0:
             NRdata.setName(layername)
             #
-            #Write layer to shape file and reload layer from shapefile
+            #Write layer to file and reload
             TimeString = str(datetime.datetime.now()).replace(':','-').replace(':','-').replace('.','-').replace(' ','-')
             #Save as GeoPackage
             QgsVectorFileWriter.writeAsVectorFormat(NRdata,outputDIR+"/"+layername+TimeString+".gpkg",'utf-8',QgsCoordinateReferenceSystem(standardCRS))
-            #Save as Shapefile
-            #QgsVectorFileWriter.writeAsVectorFormat(NRdata,outputDIR+"/"+layername+TimeString+".shp",'utf-8',QgsCoordinateReferenceSystem(standardCRS),driverName="ESRI Shapefile")
             #Reload layer
             NRdata = QgsVectorLayer(outputDIR+"/"+layername+TimeString+".gpkg",layername,"ogr")
             if not NRdata.isValid():
@@ -384,6 +384,8 @@ class QgeoAlgorithm(QgsProcessingAlgorithm):
                 return
             # Add styling for NRdata
             NRdata.loadNamedStyle(resolve(layerstyle))
+            #write style to geopackage
+            NRdata.saveStyleToDatabase(name="Qgeo-default", description=layerInfo['layerstyle'], useAsDefault=True, uiFileContent="")
             #
             #Add layer to canvas
             project = QgsProject.instance()
@@ -395,8 +397,6 @@ class QgeoAlgorithm(QgsProcessingAlgorithm):
             feedback.setProgressText("-no data-")
         #
         return
-
-
     def processAlgorithm(self, parameters, context, feedback):
         # Set the standard CRS to GDA2020 (EPSG:7844)
         standardCRS = "EPSG:7844"
@@ -411,7 +411,7 @@ class QgeoAlgorithm(QgsProcessingAlgorithm):
         loadDSurfG = self.parameterAsBool(parameters,self.LOADDSURFG,context)
         loadDSolG = self.parameterAsBool(parameters,self.LOADDSOLG,context)
         #loadDStruct = self.parameterAsBool(parameters,self.LOADDSTRUCT,context)
-        loadRGsurf = self.parameterAsBool(parameters,self.LOADRGSURF,context)
+        loadRegional = self.parameterAsBool(parameters,self.LOADREGIONAL,context)
         outputDIR = self.parameterAsFileOutput(parameters,self.OUTPUTDIR,context)
         feedback.setProgress(1)
         # The following lines workaround an apparent QGIS bug where a temporary directory isn't actually made.
@@ -447,10 +447,7 @@ class QgeoAlgorithm(QgsProcessingAlgorithm):
         xform = QgsCoordinateTransform(PropertyCRS, canvasCRS, project)
         canvas.setExtent(xform.transform(PropertyVlayer.extent()))
         #
-        # Initialise dictionaries
-        post = dict(serviceType = "MapServer/",
-                    f = 'geojson'
-                    )
+        # Initialise
         layerInfo = dict(   vlayer = PropertyVlayer,
                             outputDIR = outputDIR,
                             standardCRS = standardCRS
@@ -461,12 +458,11 @@ class QgeoAlgorithm(QgsProcessingAlgorithm):
         ################################
         if loadTenure:
             feedback.setProgressText("Getting tenure map...")
-            post.update(dict(   service1 = "PlanningCadastre/", 
+            post = dict(        service1 = "PlanningCadastre/", 
                                 service2 = "LandParcelPropertyFramework/",
                                 serviceNumber = str(13),
-                                serviceType = "MapServer/",
                                 f = 'geojson'
-                                ))
+                                )
             layerInfo.update(dict(  layername = "Tenure",
                                     layerstyle = "LayerStyles/QldPropertyTenure.qml",
                                     geomtype = "MultiPolygon"
@@ -477,18 +473,17 @@ class QgeoAlgorithm(QgsProcessingAlgorithm):
         # Get Detailed Surface Geology #
         ################################
         if loadDSurfG:
-            post.update(dict(   service1 = "GeoscientificInformation/", 
+            post = dict(        service1 = "GeoscientificInformation/", 
                                 service2 = "GeologyDetailed/",
                                 serviceNumber = str(14),
                                 geometry = '*',
-                                serviceType = "MapServer/",
                                 f = 'geojson'
-                                ))
+                                )
             feedback.setProgressText("Getting Detailed surface geology extent...")
             tempLayer = QgsVectorLayer(self.GetGEOJSON(self.BuildQuery(post,context,feedback),context,feedback), "tempLayer", "ogr")
             if not tempLayer.isValid():
                 feedback.reportError("Layer failed to load! [code M1]", True)
-                return
+                return {}
             #Check if property boundary intersects with Detailed Geology Extent
             params = {
                 'INPUT' : tempLayer,
@@ -502,7 +497,7 @@ class QgeoAlgorithm(QgsProcessingAlgorithm):
                 context=context,
                 feedback=feedback)["OUTPUT"]
             if feedback.isCanceled():
-                return
+                return {}
             #
             if tempLayer.featureCount()!=0:
                 feedback.setProgressText("Getting detailed surface geology...")
@@ -521,19 +516,17 @@ class QgeoAlgorithm(QgsProcessingAlgorithm):
         # Get Detailed Solid Geology #
         ##############################
         if loadDSolG:
-            post.update(dict(   service1 = "GeoscientificInformation/", 
+            post = dict(        service1 = "GeoscientificInformation/", 
                                 service2 = "GeologyDetailed/",
                                 serviceNumber = str(16),
                                 geometry = '*',
-                                serviceType = "MapServer/",
                                 f = 'geojson'
-                                ))
+                                )
             feedback.setProgressText("Getting detailed solid geology extent...")
-            post.update(dict(serviceNumber = str(16)))
             tempLayer = QgsVectorLayer(self.GetGEOJSON(self.BuildQuery(post,context,feedback),context,feedback), "tempLayer", "ogr")
             if not tempLayer.isValid():
                 feedback.reportError("Layer failed to load! [code M2]", True)
-                return
+                return {}
             #Check if property boundary intersects with Detailed Geology Extent
             params = {
                 'INPUT' : tempLayer,
@@ -547,7 +540,7 @@ class QgeoAlgorithm(QgsProcessingAlgorithm):
                 context=context,
                 feedback=feedback)["OUTPUT"]
             if feedback.isCanceled():
-                return
+                return {}
             #
             if tempLayer.featureCount()!=0:
                 feedback.setProgressText("Getting detailed solid geology...")
@@ -563,24 +556,21 @@ class QgeoAlgorithm(QgsProcessingAlgorithm):
                 feedback.setProgress(10)
             else: feedback.reportError("Property outside extent of detailed solid geology mapping",True)
         ###############################
-        # Get Regional Geology Extent #
+        # Get Regional Geology        #
         ###############################
-        if loadRGsurf:
-            post.update(dict(   service1 = "GeoscientificInformation/", 
-                                service2 = "GeologyRegional/",
-                                geometry = '*',
-                                serviceType = "MapServer/",
-                                f = 'geojson'
-                                ))
+        if loadRegional:
             for i in range(2,16):
                 feedback.setProgressText("Getting regional geology extent...")
-                post.update(dict(   serviceNumber = str(i),
-                                    geometry = '*'
-                                    ))
+                post = dict(        service1 = "GeoscientificInformation/", 
+                                    service2 = "GeologyRegional/",
+                                    f = 'geojson',
+                                    geometry = '*',
+                                    serviceNumber = str(i)
+                                    )
                 tempLayer = QgsVectorLayer(self.GetGEOJSON(self.BuildQuery(post,context,feedback),context,feedback), "tempLayer", "ogr")
                 if not tempLayer.isValid():
                     feedback.reportError("Layer failed to load! [code M3]", True)
-                    return
+                    return {}
                 #Check if property boundary intersects with Detailed Geology Extent
                 params = {
                     'INPUT' : tempLayer,
@@ -594,7 +584,7 @@ class QgeoAlgorithm(QgsProcessingAlgorithm):
                     context=context,
                     feedback=feedback)["OUTPUT"]
                 if feedback.isCanceled():
-                    return
+                    return {}
                 #
                 feedback.setProgress(12+2*i)
                 if tempLayer.featureCount()!=0:

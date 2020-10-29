@@ -34,7 +34,7 @@ from qgis.core import QgsProcessingProvider
 from .qgeo_algorithm import QgeoAlgorithm
 from .qbasemap_algorithm import QbasemapAlgorithm
 from .qpdf_algorithm import QpdfAlgorithm
-from .qshowre_algorithm import QshowreAlgorithm
+#from .qshowre_algorithm import QshowreAlgorithm
 from .qextent_algorithm import QextentAlgorithm
 from PyQt5.QtGui import QIcon
 import os
@@ -67,7 +67,7 @@ class QgeoProvider(QgsProcessingProvider):
         self.addAlgorithm(QbasemapAlgorithm())
         self.addAlgorithm(QpdfAlgorithm())
         #self.addAlgorithm(QshowreAlgorithm())
-        #self.addAlgorithm(QextentAlgorithm())
+        self.addAlgorithm(QextentAlgorithm())
 
     def id(self):
         """
@@ -75,7 +75,7 @@ class QgeoProvider(QgsProcessingProvider):
         string should be a unique, short, character only string, eg "qgis" or
         "gdal". This string should not be localised.
         """
-        return 'Queensland-geoscience'
+        return 'Queensland geoscience'
 
     def name(self):
         """
@@ -84,7 +84,7 @@ class QgeoProvider(QgsProcessingProvider):
 
         This string should be short (e.g. "Lastools") and localised.
         """
-        return self.tr('Queensland-geoscience')
+        return self.tr('Queensland geoscience')
 
     def icon(self):
         """
