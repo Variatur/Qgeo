@@ -6,7 +6,7 @@
 name=Qgeo
 qgisMinimumVersion=3.0
 description=This plugin loads and displays geoscientific spatial data for Queensland, Australia. Layers can be loaded using property (lot-plan) or extent searches. The plugin can also load imagery, basemaps, various informative overlays, and export maps to a georeferenced PDF.
-version=1.0
+version=1.1
 author=Otto and Gary Pattemore
 email=Gary.Pattemore@dnrme.qld.gov.au
 
@@ -20,7 +20,7 @@ repository=https://github.com/PattemoreSoftware/Qgeo
 
 hasProcessingProvider=yes
 # Uncomment the following line and add your changelog:
-changelog=Initial public release
+changelog=Refactor queries to fix minor bugs + access to more layers + user experience improvements
 
 # Tags are comma separated with spaces allowed
 tags=cadastre,Queensland,Australia,geology,basemap,tenure,PDF
@@ -44,4 +44,3 @@ Category of the plugin: Raster, Vector, Database or Web
 
 # If the plugin can run on QGIS Server.
 server=False
-

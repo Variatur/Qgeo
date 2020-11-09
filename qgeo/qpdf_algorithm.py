@@ -2,7 +2,7 @@
 
 """
 /***************************************************************************
- Qgeo
+ Qpdf
                                  A QGIS plugin
  Export PDF
                               -------------------
@@ -14,10 +14,11 @@
 
 /***************************************************************************
  *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 2 of the License, or     *
- *   (at your option) any later version.                                   *
+ *   This work is licensed under the Creative Commons Attribution 4.0      *
+ *   International License. To view a copy of this license,                *
+ *   visit http://creativecommons.org/licenses/by/4.0/ or                  *
+ *   send a letter to Creative Commons,                                    *
+ *   PO Box 1866, Mountain View, CA 94042, USA.                            *
  *                                                                         *
  ***************************************************************************/
 """
@@ -38,13 +39,8 @@ from PyQt5.QtGui import QIcon
 from pathlib import Path
 import os
 import math
-
+from .query import resolve
 #
-def resolve(name, basepath=None):
-    if not basepath:
-      basepath = os.path.dirname(os.path.realpath(__file__))
-    return os.path.join(basepath, name)
-
 class QpdfAlgorithm(QgsProcessingAlgorithm):
     """Exports the current map view to PDF"""
     TEMPLATE = 'TEMPLATE'
@@ -64,8 +60,8 @@ class QpdfAlgorithm(QgsProcessingAlgorithm):
             QgsProcessingParameterEnum(
                 self.PAGESIZE,
                 self.tr('Select a page size'),
-                ['A0','A1','A2','A3','A4'],
-                defaultValue = '3',
+                ['A0','A3','A4'],
+                defaultValue = '1',
             )
         )
         
@@ -73,7 +69,7 @@ class QpdfAlgorithm(QgsProcessingAlgorithm):
             QgsProcessingParameterString(
                 self.TITLE,
                 self.tr('Map Title'),
-                defaultValue = 'Regional ecosystem map (regulated)',
+                defaultValue = 'Geology',
             )
         )
         
@@ -103,7 +99,7 @@ class QpdfAlgorithm(QgsProcessingAlgorithm):
         self.addParameter(
             QgsProcessingParameterBoolean(
                 self.LOADQUICK,
-                self.tr('Checked = Quick map export to PDF \nUnchecked = Use Layout Manager (ignored for QGIS version <3.16 and <3.10.12 LTS)'),
+                self.tr('Checked = Quick map export to PDF \nUnchecked = Use Layout Manager'),
                 True
             )
         )
@@ -122,7 +118,7 @@ class QpdfAlgorithm(QgsProcessingAlgorithm):
         logo = self.parameterAsFileOutput(parameters, 'LOGO', context)
         image = self.parameterAsFileOutput(parameters, 'IMAGE', context)
         pdf = self.parameterAsFileOutput(parameters, 'OUTPUT', context)
-        page_size = self.parameterAsFileOutput(parameters, 'PAGESIZE', context)
+        page_size = self.parameterAsEnum(parameters, 'PAGESIZE', context)
         quick = self.parameterAsBoolean(parameters, 'LOADQUICK', context)
         feedback.setProgress(10)
         #
@@ -132,12 +128,15 @@ class QpdfAlgorithm(QgsProcessingAlgorithm):
         #Check QGIS version to avoid precision bug #37755 (20-30 metre errors at a property scale). Fixed.
         #ver = QgsExpressionContextUtils.globalScope().variable('qgis_version_no')
         #if not(ver>=31600 or (ver>=31011 and ver<31200)): quick = True
+        if page_size == 0: page = 'A0'
+        elif page_size == 1: page = 'A3'
+        else: page = 'A4'
+        page_size = page
         if quick == True:
             project = context.project()
             layout = QgsLayout(project)
             layout.initializeDefaults()
             # Setup page
-            page_size = 'A'+ page_size
             pc = layout.pageCollection()
             pc.page(0).setPageSize(page_size, QgsLayoutItemPage.Orientation.Landscape)
             feedback.setProgress(20)
@@ -156,7 +155,7 @@ class QpdfAlgorithm(QgsProcessingAlgorithm):
                     disclaimer_content = f.read()
                     f.close()
             except FileNotFoundError as e:
-                feedback.setProgressText("No valid disclaimer provided - excluding")
+                feedback.setProgressText("No valid disclaimer provided - setting to blank")
                 disclaimer_content = ''
             feedback.setProgress(40)
             layout.loadFromTemplate(doc, QgsReadWriteContext(), False)
@@ -205,7 +204,7 @@ class QpdfAlgorithm(QgsProcessingAlgorithm):
             #Use print layout manager
             manager = project.layoutManager()
             layout = QgsPrintLayout(project)
-            page_size = 'A'+ page_size
+            #page_size = 'A'+ page_size
             layoutName = title + '_' + page_size
             layout.initializeDefaults()
             layout.setName(layoutName)
@@ -230,7 +229,7 @@ class QpdfAlgorithm(QgsProcessingAlgorithm):
                     disclaimer_content = f.read()
                     f.close()
             except FileNotFoundError as e:
-                feedback.setProgressText("No valid disclaimer provided - excluding")
+                feedback.setProgressText("No valid disclaimer provided - setting to blank")
                 disclaimer_content = ''
             feedback.setProgress(40)
             # add title

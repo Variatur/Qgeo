@@ -38,11 +38,8 @@ import processing
 from PyQt5.QtGui import QIcon
 import time
 import datetime
+from .query import resolve
 #
-def resolve(name, basepath=None):
-    if not basepath:
-      basepath = os.path.dirname(os.path.realpath(__file__))
-    return os.path.join(basepath, name)
 
 class QbasemapAlgorithm(QgsProcessingAlgorithm):
     #INPUT = 'INPUT'
