@@ -7,9 +7,9 @@
  Export PDF
                               -------------------
         begin                : 2020-05-06
-        updated              : 2020-10-03
-        copyright            : (C) 2020 by Gary and Otto Pattemore
-        email                : g .dot. pattemore .at. gmail .dot. com
+        updated              : 2021-04-25
+        copyright            : (C) 2020 by Gary Pattemore and Otto Pattemore
+        email                : pattemore .dot. software .at. gmail .dot. com
  ***************************************************************************/
 
 /***************************************************************************
@@ -23,9 +23,9 @@
  ***************************************************************************/
 """
 
-__author__ = 'Gary and Otto Pattemore'
+__author__ = 'Gary Pattemore and Otto Pattemore'
 __date__ = '2020-10-03'
-__copyright__ = '(C) 2020 by Gary and Otto Pattemore'
+__copyright__ = '(C) 2020 by Gary Pattemore and Otto Pattemore'
 
 # This will get replaced with a git SHA1 when you do a git archive
 __revision__ = '$Format:%H$'

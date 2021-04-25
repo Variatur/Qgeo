@@ -1,2 +1,2 @@
 # Qgeo
-Python plugin for QGIS for loading geoscientific spatial data from Qld government ArcGIS servers.
+This plugin loads and displays geoscientific spatial data for Queensland, Australia. Layers can be loaded using property (lot-plan) or extent searches. The plugin can also load imagery, basemaps, various informative overlays, and export maps to a georeferenced PDF. Some data can also be exported to a Google Earth KMZ files with accurate formatting using a specialised QGIS Action (See QGIS Actions documentation for details on how to access Actions).

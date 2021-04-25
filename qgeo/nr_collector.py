@@ -8,8 +8,8 @@
  Loads data from the Queensland government feature server.
                               -------------------
         begin                : 2020-11-07
-        copyright            : (C) 2020 by Otto and Gary Pattemore
-        email                : g .dot. pattemore .at. gmail .dot. com
+        copyright            : (C) 2020 by Otto Pattemore and Gary Pattemore
+        email                : pattemore .dot. software .at. gmail .dot. com
  ***************************************************************************/
 
 /***************************************************************************
@@ -23,9 +23,9 @@
  ***************************************************************************/
 """
 
-__author__ = 'Otto and Gary Pattemore'
+__author__ = 'Otto Pattemore and Gary Pattemore'
 __date__ = '2020-11-07'
-__copyright__ = '(C) 2020 by Otto and Gary Pattemore'
+__copyright__ = '(C) 2020 by Otto Pattemore and Gary Pattemore'
 
 # This will get replaced with a git SHA1 when you do a git archive
 
@@ -136,12 +136,13 @@ def LoadNaturalResourceLayer(post,layerInfo,context,feedback):
                 return -1
             # Pull result into Vector Layer - tempLayer
             tempLayer = QgsVectorLayer(sublistQueryResult, layername, "ogr")
-            #print("tempLayer feature count = "+str(tempLayer.featureCount()))
             #
             #Check if valid geometry is returned
             if tempLayer.featureCount() > 0:
                 #Buffer layer to clean-up inconsistencies in returned polygons -- uses buffer distance = 0
-                if QgsWkbTypes.geometryDisplayString(tempLayer.geometryType()) == "Polygon":
+                LayerType = QgsWkbTypes.geometryDisplayString(tempLayer.geometryType())
+                feedback.setProgressText("Layer type is: "+LayerType)
+                if LayerType == "Polygon":
                     params = {
                         'INPUT' : tempLayer,
                         'DISTANCE' : 0,
@@ -173,6 +174,12 @@ def LoadNaturalResourceLayer(post,layerInfo,context,feedback):
                         return 0
                 else:
                     return 0
+                # Create layer with spatial index
+                if tempLayer.dataProvider().createSpatialIndex() == True:
+                    feedback.setProgressText("Spatial index created")
+                else:
+                    feedback.setProgressText("Unable to create spatial index - not critical - temporary layer is only used once, so ignore the following message")
+                clipPolygon.dataProvider().createSpatialIndex()
                 #Clip layer to property polygon
                 params = {
                     'INPUT' : tempLayer,
@@ -218,6 +225,8 @@ def LoadNaturalResourceLayer(post,layerInfo,context,feedback):
         if not NRdata.isValid():
             feedback.reportError("Layer failed to load! [code A4]", True)
             return
+        #Create spatial index
+        NRdata.dataProvider().createSpatialIndex()
         # Add styling for NRdata
         NRdata.loadNamedStyle(resolve(layerstyle))
         #write style to geopackage

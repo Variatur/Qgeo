@@ -7,8 +7,9 @@
  Loads Queensland geoscience data from the Queensland government feature server.
                               -------------------
         begin                : 2020-11-07
-        copyright            : (C) 2020 by Otto and Gary Pattemore
-        email                : g .dot. pattemore .at. gmail .dot. com
+        updated              : 2021-04-25
+        copyright            : (C) 2020 by Otto Pattemore and Gary Pattemore
+        email                : pattemore .dot. software .at. gmail .dot. com
  ***************************************************************************/
 
 /***************************************************************************
@@ -22,9 +23,9 @@
  ***************************************************************************/
 """
 
-__author__ = 'Otto and Gary Pattemore'
+__author__ = 'Otto Pattemore and Gary Pattemore'
 __date__ = '2020-11-07'
-__copyright__ = '(C) 2020 by Otto and Gary Pattemore'
+__copyright__ = '(C) 2020 by Otto Pattemore and Gary Pattemore'
 
 # This will get replaced with a git SHA1 when you do a git archive
 
@@ -67,20 +68,6 @@ class QgeoAlgorithm(QgsProcessingAlgorithm):
                 False
             )
         )
-        #self.addParameter(
-        #    QgsProcessingParameterBoolean(
-        #        self.LOADDSURFG,
-        #        self.tr('Detailed surface geology (1:100k) - not available in all areas'),
-        #        False
-        #    )
-        #)
-        #self.addParameter(
-        #    QgsProcessingParameterBoolean(
-        #        self.LOADDSOLG,
-        #        self.tr('Detailed solid geology (1:100k) - not available in all areas'),
-        #        False
-        #    )
-        #)
         self.addParameter(
             QgsProcessingParameterBoolean(
                 self.LOADDETAILED,
@@ -124,13 +111,16 @@ class QgeoAlgorithm(QgsProcessingAlgorithm):
             os.mkdir(outputDIR)
         except FileExistsError as e:
             pass
+        ##########################
+        # Get property polygon(s)
+        ##########################
+        feedback.setProgressText("Getting property polygon(s)...")  
         layerInfo = dict(   lots = lots,
                             layername = 'Property Boundary',
                             layerstyle = 'LayerStyles/Property.qml',
                             outputDIR = outputDIR,
                             standardCRS = standardCRS
                             )
-        #Get property polygon(s)
         PropertyVlayer = LoadPropertyLayer(layerInfo,context,feedback)
         if PropertyVlayer == None or not PropertyVlayer.isValid() or PropertyVlayer.featureCount() < 1:
             feedback.reportError("Failed to load property boundary! Invalid lot/plan? Network or server problems?", True)
@@ -163,7 +153,7 @@ class QgeoAlgorithm(QgsProcessingAlgorithm):
         # Get Tenure                   #
         ################################
         if loadTenure:
-            feedback.setProgressText("Tenure map - checking...")
+            feedback.setProgressText("**********") 
             post = dict(        service1 = "PlanningCadastre/", 
                                 service2 = "LandParcelPropertyFramework/",
                                 serviceNumber = str(13)
@@ -173,15 +163,17 @@ class QgeoAlgorithm(QgsProcessingAlgorithm):
                                     geomtype = "MultiPolygon"
                                     ))
             LayerName = layerInfo['layername']
-            fc = LoadNaturalResourceLayer(post,layerInfo,context,feedback)
+            feedback.setProgressText(LayerName+" - checking...")
+            fc = LoadNaturalResourceLayer(post,layerInfo,context,feedback)  # fc = feature count
             if fc > 1: feedback.setProgressText(LayerName+" - loaded "+str(fc)+" objects")
             if fc == 1: feedback.setProgressText(LayerName+" - loaded "+str(fc)+" object")
-            if fc == 0: feedback.setProgressText(LayerName+" - no objects found")
+            if fc == 0: feedback.setProgressText("  -- No objects found --")
             feedback.setProgress(6)
         ################################
         # Detailed Geology             #
         ################################
         if loadDetailed:
+            feedback.setProgressText("**********") 
             post = dict(        service1 = "GeoscientificInformation/", 
                                 service2 = "GeologyDetailed/"
                                 )
@@ -200,13 +192,14 @@ class QgeoAlgorithm(QgsProcessingAlgorithm):
                 fc = LoadNaturalResourceLayer(post,layerInfo,context,feedback)
                 if fc > 1: feedback.setProgressText(LayerName+" - loaded "+str(fc)+" objects")
                 if fc == 1: feedback.setProgressText(LayerName+" - loaded "+str(fc)+" object")
-                #if fc == 0: feedback.setProgressText(LayerName+" - no objects found")
+                if fc == 0: feedback.setProgressText("  -- No objects found --")
                 feedback.setProgress(8)
         #
         ###############################
         # Get Regional Geology        #
         ###############################
         if loadRegional:
+            feedback.setProgressText("**********") 
             feedback.setProgressText("Regional geology - checking...")
             for i in range(2,16):
                 post = dict(        service1 = "GeoscientificInformation/", 
@@ -219,6 +212,7 @@ class QgeoAlgorithm(QgsProcessingAlgorithm):
                     LayerName=json.loads(GetGEOJSON(ItemInfo(post,context,feedback),context,feedback))
                     DefaultLayerName = 'RegionalGeology-'+str(k)
                     LayerName=LayerName.get('title',DefaultLayerName)
+                    feedback.setProgressText(LayerName+" - checking...")
                     layerInfo.update(dict(  layername = LayerName,
                                             layerstyle = "LayerStyles/RegionalGeology"+str(k)+".qml",
                                             geomtype = "MultiPolygon"
@@ -228,6 +222,7 @@ class QgeoAlgorithm(QgsProcessingAlgorithm):
                     if fc > 0:
                         if fc > 1: feedback.setProgressText(LayerName+" - loaded "+str(fc)+" objects")
                         if fc == 1: feedback.setProgressText(LayerName+" - loaded "+str(fc)+" object")
+                    if fc == 0: feedback.setProgressText("  -- No objects found --")
         #
         #
         feedback.setProgress(100)
