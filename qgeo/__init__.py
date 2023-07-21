@@ -6,7 +6,7 @@
  Loads Queensland geoscience data from the Queensland government feature server.
                               -------------------
         begin                : 2020-10-08
-        copyright            : (C) 2020 by Otto Pattemore and Gary Pattemore
+        copyright            : (C) 2023 by Otto Pattemore and Gary Pattemore
         email                : pattemore .dot. software .at. gmail .dot. com
  ***************************************************************************/
 
@@ -24,7 +24,7 @@
 
 __author__ = 'Otto Pattemore and Gary Pattemore'
 __date__ = '2020-05-06'
-__copyright__ = '(C) 2020 by Otto Pattemore and Gary Pattemore'
+__copyright__ = '(C) 2023 by Otto Pattemore and Gary Pattemore'
 
 
 # noinspection PyPep8Naming

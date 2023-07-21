@@ -9,7 +9,9 @@
                               -------------------
         begin                : 2020-05-06
         updated              : 2021-04-25
-        copyright            : (C) 2020 by Otto Pattemore and Gary Pattemore
+        updated              : 2023-04-11
+        updated              : 2023-07-15
+        copyright            : (C) 2023 by Otto Pattemore and Gary Pattemore
         email                : pattemore .dot. software .at. gmail .dot. com
  ***************************************************************************/
 
@@ -26,7 +28,7 @@
 
 __author__ = 'Otto Pattemore and Gary Pattemore'
 __date__ = '2020-11-07'
-__copyright__ = '(C) 2020 by Otto Pattemore and Gary Pattemore'
+__copyright__ = '(C) 2023 by Otto Pattemore and Gary Pattemore'
 
 # This will get replaced with a git SHA1 when you do a git archive
 
@@ -100,35 +102,71 @@ class QextentAlgorithm(QgsProcessingAlgorithm):
         feedback.setProgress(5)
         #
         # Calculate area of extent
+        #
         project = QgsProject.instance()
         canvas = iface.mapCanvas()
-        canvasExtent = canvas.extent()
-        tempV = QgsGeometry().fromRect(canvasExtent)
-        measure = QgsDistanceArea()
-        tc= project.transformContext()
         canvasCRS = QgsCoordinateReferenceSystem(canvas.mapSettings().destinationCrs().authid())
-        measure.setSourceCrs(canvasCRS,tc)
-        measure.setEllipsoid(project.ellipsoid())
-        area = measure.measureArea(tempV)
+        #print("canvasCRS : ",canvasCRS)
+
+        # get canvas extent
+        canvasExtent = canvas.extent() # a QgsRectangle 
+        #print("canvasExtent : ",canvasExtent)
+
+        # convert to geometry
+        canvasBorder = QgsGeometry().fromRect(canvasExtent)  # a QgsGeometry
+        #print("canvasBorder : ",canvasBorder)
+
+        #Transform CRS to standard CRS
+        xform = QgsCoordinateTransform(canvasCRS, QgsCoordinateReferenceSystem(standardCRS), project)
+        canvasBorder.transform(xform)
+        extent_in_standardCRS= canvasBorder.boundingBox()
+
+        #measure area
+        QgsDistanceArea().setSourceCrs(QgsCoordinateReferenceSystem(standardCRS),project.transformContext())
+        QgsDistanceArea().setEllipsoid(project.ellipsoid())
+        area = QgsDistanceArea().measureArea(canvasBorder)
+        area_in_hectares = QgsDistanceArea().convertAreaMeasurement(area,QgsUnitTypes.AreaHectares)
+        #print("canvasBorder area : ",area)
+        #print("Hectares : ",area_in_hectares)
+        #print("Area units",QgsUnitTypes().encodeUnit(QgsDistanceArea().areaUnits()))
+
+        # Build geometry query string
+        xmin = str(extent_in_standardCRS.xMinimum())
+        ymin = str(extent_in_standardCRS.yMinimum())
+        xmax = str(extent_in_standardCRS.xMaximum())
+        ymax = str(extent_in_standardCRS.yMaximum())
+        CanvasExtentString = xmin+","+ymin+","+xmax+","+ymax
+        print("Extent in stdCRS",CanvasExtentString)
+        #
+        #project = QgsProject.instance()
+        #canvas = iface.mapCanvas()
+        #canvasExtent = canvas.extent()
+        #tempV = QgsGeometry().fromRect(canvasExtent)
+        #measure = QgsDistanceArea()
+        #tc= project.transformContext()
+        #canvasCRS = QgsCoordinateReferenceSystem(canvas.mapSettings().destinationCrs().authid())
+        #measure.setSourceCrs(canvasCRS,tc)
+        #measure.setEllipsoid(project.ellipsoid())
+        #area = measure.measureArea(tempV)
         # Exit if too large
-        if area/10000 > 30000000:
-            feedback.reportError("Extent is too large ("+str(round(area/10000))+" ha) - exiting...", True)
+        if area_in_hectares > 30000000:
+            feedback.reportError("Extent is too large ("+str(round(area_in_hectares))+" ha) - exiting...", True)
             return {}
         #
-        #Convert canvas extent to standard CRS
-        xform = QgsCoordinateTransform(canvasCRS, QgsCoordinateReferenceSystem(standardCRS), project)
-        canvasExtent = xform.transform(canvasExtent)
-        # Get canvas CRS in plain english - actually, this is only used for server query and should be in standardCRS
-        #NEEDS RENAMING
-        #canvasCRS = QgsCoordinateReferenceSystem(canvas.mapSettings().destinationCrs()).authid()
-        canvasCRS = standardCRS
-        #
-        # Build geometry query string
-        xmin = str(canvasExtent.xMinimum())
-        ymin = str(canvasExtent.yMinimum())
-        xmax = str(canvasExtent.xMaximum())
-        ymax = str(canvasExtent.yMaximum())
-        CanvasExtentString = xmin+","+ymin+","+xmax+","+ymax
+        ##Convert canvas extent to standard CRS
+        #xform = QgsCoordinateTransform(canvasCRS, QgsCoordinateReferenceSystem(standardCRS), project)
+        #canvasExtent = xform.transform(canvasExtent)
+        ## Get canvas CRS in plain english - actually, this is only used for server query and should be in standardCRS
+        ##NEEDS RENAMING
+        ##canvasCRS = QgsCoordinateReferenceSystem(canvas.mapSettings().destinationCrs()).authid()
+        #canvasCRS = standardCRS
+        ##
+        ## Build geometry query string
+        #xmin = str(canvasExtent.xMinimum())
+        #ymin = str(canvasExtent.yMinimum())
+        #xmax = str(canvasExtent.xMaximum())
+        #ymax = str(canvasExtent.yMaximum())
+        #CanvasExtentString = xmin+","+ymin+","+xmax+","+ymax
         TimeString = str(datetime.datetime.now()).replace(':','-').replace(':','-').replace('.','-').replace(' ','-')
         # Initialise dictionaries
         post = {}

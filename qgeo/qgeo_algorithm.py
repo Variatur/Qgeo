@@ -8,7 +8,9 @@
                               -------------------
         begin                : 2020-11-07
         updated              : 2021-04-25
-        copyright            : (C) 2020 by Otto Pattemore and Gary Pattemore
+        updated              : 2023-04-11
+        updated              : 2023-07-15
+        copyright            : (C) 2023 by Otto Pattemore and Gary Pattemore
         email                : pattemore .dot. software .at. gmail .dot. com
  ***************************************************************************/
 
@@ -25,7 +27,7 @@
 
 __author__ = 'Otto Pattemore and Gary Pattemore'
 __date__ = '2020-11-07'
-__copyright__ = '(C) 2020 by Otto Pattemore and Gary Pattemore'
+__copyright__ = '(C) 2023 by Otto Pattemore and Gary Pattemore'
 
 # This will get replaced with a git SHA1 when you do a git archive
 
@@ -91,6 +93,8 @@ class QgeoAlgorithm(QgsProcessingAlgorithm):
     #
     def processAlgorithm(self, parameters, context, feedback):
         # Set the standard CRS to GDA2020 (EPSG:7844)
+        project = QgsProject.instance()
+        projectCRS=project.crs()
         standardCRS = "EPSG:7844"
         #Parse the lot plan numbers
         lots = re.sub('[^0-9a-zA-Z]+', ',', self.parameterAsString(parameters,self.INPUT,context).upper()).split(',')
@@ -118,6 +122,7 @@ class QgeoAlgorithm(QgsProcessingAlgorithm):
         layerInfo = dict(   lots = lots,
                             layername = 'Property Boundary',
                             layerstyle = 'LayerStyles/Property.qml',
+                            projectCRS = projectCRS,
                             outputDIR = outputDIR,
                             standardCRS = standardCRS
                             )
@@ -129,7 +134,6 @@ class QgeoAlgorithm(QgsProcessingAlgorithm):
         feedback.setProgress(3)
         feedback.setProgressText("Property polygon(s) loaded")  
         # Load property layer to canvas
-        project = QgsProject.instance()
         project.addMapLayer(PropertyVlayer, False)
         layerTree = iface.layerTreeCanvasBridge().rootGroup()
         layerTree.insertChildNode(0, QgsLayerTreeLayer(PropertyVlayer))

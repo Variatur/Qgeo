@@ -7,7 +7,8 @@ useful utilities for communicating with Qld Govt public spatial servers
                               -------------------
         begin                : 2020-11-07
         updated              : 2021-04-25
-        copyright            : (C) 2020 by Otto Pattemore and Gary Pattemore
+        updated              : 2023-04-11
+        copyright            : (C) 2023 by Otto Pattemore and Gary Pattemore
         email                : pattemore .dot. software .at. gmail .dot. com
  ***************************************************************************/
 
@@ -24,7 +25,7 @@ useful utilities for communicating with Qld Govt public spatial servers
 
 __author__ = 'Otto Pattemore and Gary Pattemore'
 __date__ = '2020-11-07'
-__copyright__ = '(C) 2020 by Otto Pattemore and Gary Pattemore'
+__copyright__ = '(C) 2023 by Otto Pattemore and Gary Pattemore'
 
 # This will get replaced with a git SHA1 when you do a git archive
 
@@ -82,7 +83,8 @@ def BuildQuery(post,context,feedback):
     #print(objectIds)
     geometry = post.get('geometry', '')
     # Build
-    baseURL = "https://gisservices.information.qld.gov.au/arcgis/rest/"
+    #baseURL = "https://gisservices.information.qld.gov.au/arcgis/rest/"
+    baseURL = "https://spatial-gis.information.qld.gov.au/arcgis/rest/"
     serviceURL = "services/"+service1+service2+serviceType
     whereURL = serviceNumber+"/query?where="+where+"&objectIds="+objectIds+"&time="
     geomURL = "&geometry="+geometry+"&geometryType="+geometryType+"&inSR="+inSR+"&spatialRel=esriSpatialRelIntersects&distance=&units=esriSRUnit_Meter&relationParam="
@@ -94,7 +96,8 @@ def BuildQuery(post,context,feedback):
     #
     return queryURL
 def ItemInfo(post,context,feedback):
-    baseURL = "https://gisservices.information.qld.gov.au/arcgis/rest/"
+    #baseURL = "https://gisservices.information.qld.gov.au/arcgis/rest/"
+    baseURL = "https://spatial-gis.information.qld.gov.au/arcgis/rest/"
     # Mandatory query parameters
     service1 = post.get('service1', '')
     service2 = post.get('service2', '')

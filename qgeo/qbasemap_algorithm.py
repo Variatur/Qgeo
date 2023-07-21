@@ -8,7 +8,9 @@
                               -------------------
         begin                : 2020-05-06
         updated              : 2021-04-25
-        copyright            : (C) 2020 by Gary Pattemore and Otto Pattemore
+        updated              : 2023-04-11
+        updated              : 2023-07-15
+        copyright            : (C) 2023 by Gary Pattemore and Otto Pattemore
         email                : pattemore .dot. software .at. gmail .dot. com
  ***************************************************************************/
 
@@ -24,7 +26,7 @@
 
 __author__ = 'Gary Pattemore and Otto Pattemore'
 __date__ = '2020-05-06'
-__copyright__ = '(C) 2020 by Gary Pattemore and Otto Pattemore'
+__copyright__ = '(C) 2023 by Gary Pattemore and Otto Pattemore'
 
 # This will get replaced with a git SHA1 when you do a git archive
 

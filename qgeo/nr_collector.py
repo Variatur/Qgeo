@@ -8,7 +8,9 @@
  Loads data from the Queensland government feature server.
                               -------------------
         begin                : 2020-11-07
-        copyright            : (C) 2020 by Otto Pattemore and Gary Pattemore
+        updated              : 2023-04-11
+        updated              : 2023-07-15
+        copyright            : (C) 2023 by Otto Pattemore and Gary Pattemore
         email                : pattemore .dot. software .at. gmail .dot. com
  ***************************************************************************/
 
@@ -25,7 +27,7 @@
 
 __author__ = 'Otto Pattemore and Gary Pattemore'
 __date__ = '2020-11-07'
-__copyright__ = '(C) 2020 by Otto Pattemore and Gary Pattemore'
+__copyright__ = '(C) 2023 by Otto Pattemore and Gary Pattemore'
 
 # This will get replaced with a git SHA1 when you do a git archive
 
@@ -161,6 +163,7 @@ def LoadNaturalResourceLayer(post,layerInfo,context,feedback):
                 elif searchType == 'extentstring':
                     s = ExtentString.split(',')
                     s = s[0]+','+s[2]+','+s[1]+','+s[3]
+                    #Clip layer to property polygon
                     params = {
                         'INPUT' : s,
                         'OUTPUT' : "memory:"
@@ -170,10 +173,18 @@ def LoadNaturalResourceLayer(post,layerInfo,context,feedback):
                         params,
                         context=context,
                         feedback=feedback)["OUTPUT"]
+                    #print("clipPolygon CRS = "+str(clipPolygon.crs().authid()))
                     if feedback.isCanceled():
                         return 0
                 else:
                     return 0
+                crs = clipPolygon.crs()
+                crs.createFromId(int(standardCRSshort))
+                clipPolygon.setCrs(crs)
+                #print("clipPolygon feature count = "+str(clipPolygon.featureCount()))
+                #print("clipPolygon CRS = "+str(clipPolygon.crs().authid()))
+                #QgsProject.instance().addMapLayer(clipPolygon)
+                
                 # Create layer with spatial index
                 if tempLayer.dataProvider().createSpatialIndex() == True:
                     feedback.setProgressText("Spatial index created")
@@ -219,7 +230,8 @@ def LoadNaturalResourceLayer(post,layerInfo,context,feedback):
         #Write layer to file and reload
         TimeString = str(datetime.datetime.now()).replace(':','-').replace(':','-').replace('.','-').replace(' ','-')
         #Save as GeoPackage
-        QgsVectorFileWriter.writeAsVectorFormat(NRdata,outputDIR+"/"+layername+TimeString+".gpkg",'utf-8',QgsCoordinateReferenceSystem(standardCRS))
+        #QgsVectorFileWriter.writeAsVectorFormat(NRdata,outputDIR+"/"+layername+TimeString+".gpkg",'utf-8',QgsCoordinateReferenceSystem(standardCRS))
+        QgsVectorFileWriter.writeAsVectorFormat(NRdata,outputDIR+"/"+layername+TimeString+".gpkg",'utf-8')
         #Reload layer
         NRdata = QgsVectorLayer(outputDIR+"/"+layername+TimeString+".gpkg",layername,"ogr")
         if not NRdata.isValid():
