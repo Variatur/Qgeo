@@ -6,14 +6,14 @@
 name=Qgeo
 qgisMinimumVersion=3.0
 description=This plugin loads and displays geoscientific spatial data for Queensland, Australia. Layers can be loaded using property (lot-plan) or extent searches. The plugin can also load imagery, basemaps, various informative overlays, and export maps to a georeferenced PDF.
-version=2.0
+version=2.1
 author=Otto Pattemore and Gary Pattemore
-email=pattemore.software@gmail.com
+email=variatursoftware@gmail.com
 
 about=Loads and displays geoscientific spatial data for Queensland, Australia. Data is sourced from the Queensland government's public web feature server based on various search options.
 
-tracker=https://github.com/PattemoreSoftware/Qgeo/issues
-repository=https://github.com/PattemoreSoftware/Qgeo
+tracker=https://github.com/Variatur/Qgeo/issues
+repository=https://github.com/Variatur/Qgeo
 # End of mandatory metadata
 
 # Recommended items:
@@ -21,6 +21,7 @@ repository=https://github.com/PattemoreSoftware/Qgeo
 hasProcessingProvider=yes
 # Uncomment the following line and add your changelog:
 changelog=
+            2.1 =   No functional changes. Update github details and related info.
             2.0 =   Improvements to ensure working in non-GDA2020 CRSs works as expected.  
             1.3 =   Improvements for loading layers with large feature counts
             <1.3 =  Early bug fix iterations
@@ -28,7 +29,7 @@ changelog=
 # Tags are comma separated with spaces allowed
 tags=cadastre,Queensland,Australia,geology,basemap,tenure,PDF
 
-homepage=https://github.com/PattemoreSoftware/Qgeo
+homepage=https://github.com/Variatur/Qgeo
 category=Analysis
 icon=icon.png
 # experimental flag

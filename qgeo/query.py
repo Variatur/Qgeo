@@ -8,8 +8,9 @@ useful utilities for communicating with Qld Govt public spatial servers
         begin                : 2020-11-07
         updated              : 2021-04-25
         updated              : 2023-04-11
+        updated              : 2023-11-12
         copyright            : (C) 2023 by Otto Pattemore and Gary Pattemore
-        email                : pattemore .dot. software .at. gmail .dot. com
+        email                : variatursoftware .at. gmail .dot. com
  ***************************************************************************/
 
 /***************************************************************************
@@ -24,7 +25,7 @@ useful utilities for communicating with Qld Govt public spatial servers
 """
 
 __author__ = 'Otto Pattemore and Gary Pattemore'
-__date__ = '2020-11-07'
+__date__ = '2023-11-12'
 __copyright__ = '(C) 2023 by Otto Pattemore and Gary Pattemore'
 
 # This will get replaced with a git SHA1 when you do a git archive
